@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Universo Eres Tú 💛</title>
+    <!-- Enlace de alta compatibilidad para gráficos 3D en archivos locales -->
+    <script src="https://unpkg.com"></script>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #030208;
+            font-family: 'Arial', sans-serif;
+        }
+
+        #canvas3d {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        /* Textos flotantes integrados en el espacio */
+        .love-text {
+            position: absolute;
+            color: #fffde7;
+            font-weight: bold;
+            font-style: italic;
+            text-shadow: 0 0 8px rgba(255, 235, 59, 0.9), 0 0 15px rgba(255, 145, 0, 0.6);
+            pointer-events: none;
+            z-index: 2;
+            transform: translate(-50%, -50%);
+            white-space: nowrap;
+            font-size: 0.9rem;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        /* Título principal fijo superior */
+        .title-overlay {
+            position: absolute;
+            top: 12%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #ffffff;
+            font-size: 2.8rem;
+            font-weight: bold;
+            letter-spacing: 4px;
+            text-shadow: 0 0 20px rgba(255, 235, 59, 0.8);
+            z-index: 3;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="title-overlay">Te amo</div>
+    <div id="labels-container"></div>
+    <div id="canvas3d"></div>
+
+    <script>
+        const container = document.getElementById('canvas3d');
+        const labelsContainer = document.getElementById('labels-container');
+        
+        // Creación del espacio 3D
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x030208, 0.02);
+
+        // Cámara inclinada como en tu foto de ejemplo
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 22, 38);
+        camera.lookAt(0, 0, 0);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        container.appendChild(renderer.domElement);
+
+        const frases = [
+            "Te amo chaparrita linda", "Mi girasol 🌻", "Para siempre ✨", 
+            "Te Amo", "Eres mi universo", "Mi niña hermosa", "Siempre juntos"
+        ];
+
+        // --- CREACIÓN DE LA GALAXIA ESPIRAL REAL ---
+        const count = 25000; // Mucha densidad de estrellas para el efecto nuboso
+        const positions = new Float32Array(count * 3);
+        const colors = new Float32Array(count * 3);
+
+        const colorCore = new THREE.Color('#ffe066'); // Centro dorado brillante
+        const colorEdge = new THREE.Color('#ff5500'); // Brazos naranja cósmico
+
+        for(let i = 0; i < count; i++) {
+            const i3 = i * 3;
+            
+            // Fórmula matemática para brazos espirales elípticos densos
+            const r = Math.pow(Math.random(), 2.2) * 35;
+            const arms = 2; // Dos brazos principales como el ejemplo
+            const angle = ((i % arms) / arms) * Math.PI * 2 + r * 0.22 + (Math.random() - 0.5) * 0.4;
+
+            // Posicionamiento con dispersión controlada para que parezca gas
+            positions[i3]     = Math.cos(angle) * r + (Math.random() - 0.5) * (r * 0.15);
+            positions[i3 + 1] = (Math.random() - 0.5) * (2.5 / (r * 0.1 + 1)); 
+            positions[i3 + 2] = Math.sin(angle) * r + (Math.random() - 0.5) * (r * 0.15);
+
+            // Mezclar colores según la distancia al centro
+            const mixedColor = colorCore.clone();
+            mixedColor.lerp(colorEdge, r / 35);
+            
+            colors[i3]     = mixedColor.r;
+            colors[i3 + 1] = mixedColor.g;
+            colors[i3 + 2] = mixedColor.b;
+        }
+
+        const geometry = new THREE.BufferGeometry();
+        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+        // Material brillante para las estrellas de la galaxia
+        const material = new THREE.PointsMaterial({
+            size: 0.18,
+            vertexColors: true,
+            transparent: true,
+            opacity: 0.75,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
+        });
+
+        const galaxyPoints = new THREE.Points(geometry, material);
+        scene.add(galaxyPoints);
+
+        // --- NÚCLEO INCANDESCENTE ---
+        const coreGeo = new THREE.SphereGeometry(2.5, 32, 32);
+        const coreMat = new THREE.MeshBasicMaterial({
+            color: 0xffea00,
+            transparent: true,
+            opacity: 0.9
+        });
+        const core = new THREE.Mesh(coreGeo, coreMat);
+        scene.add(core);
+
+        // --- CREACIÓN DE GIRASOLES Y TEXTOS ---
+        const objectsData = [];
+        const numFlores = 30;
+
+        // Modelo 3D de flor estilizada
+        const flowerGroupBase = new THREE.Group();
+        const centerMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 0.08, 8), new THREE.MeshBasicMaterial({ color: 0x2d1a10 }));
+        centerMesh.rotation.x = Math.PI / 2;
+        flowerGroupBase.add(centerMesh);
+        
+        const petalGeo = new THREE.BoxGeometry(0.15, 0.7, 0.03);
+        const petalMat = new THREE.MeshBasicMaterial({ color: 0xffd700 });
+        for(let j=0; j<12; j++) {
+            const petal = new THREE.Mesh(petalGeo, petalMat);
+            petal.position.set(Math.cos(j * Math.PI / 6) * 0.45, Math.sin(j * Math.PI / 6) * 0.45, 0);
+            petal.rotation.z = (j * Math.PI / 6) + Math.PI / 2;
+            flowerGroupBase.add(petal);
+        }
+
+        for(let i = 0; i < numFlores; i++) {
+            const flowerCopy = flowerGroupBase.clone();
+            
+            const r = Math.random() * 20 + 4;
+            const angle = Math.random() * Math.PI * 2;
+            flowerCopy.position.set(Math.cos(angle) * r, (Math.random() - 0.5) * 1.0, Math.sin(angle) * r);
+            
+            const scale = Math.random() * 0.6 + 0.5;
+            flowerCopy.scale.set(scale, scale, scale);
+            scene.add(flowerCopy);
+
+            // Crear textos flotantes HTML
+            const label = document.createElement('div');
+            label.className = 'love-text';
+            label.innerText = frases[Math.floor(Math.random() * frases.length)];
+            labelsContainer.appendChild(label);
+
+            objectsData.push({
+                mesh: flowerCopy,
+                label: label,
+                radius: r,
+                angle: angle,
+                speed: (0.008 / (r * 0.1 + 1)) + 0.001,
+                rotSpeed: Math.random() * 0.02 + 0.01
+            });
+        }
+
+        // --- ANIMACIÓN ---
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const elapsedTime = clock.getElapsedTime();
+
+            // Rotación suave de toda la galaxia
+            galaxyPoints.rotation.y = elapsedTime * 0.05;
+
+            // Actualizar flores y textos
+            objectsData.forEach(obj => {
+                obj.angle += obj.speed;
+                obj.mesh.position.x = Math.cos(obj.angle) * obj.radius;
+                obj.mesh.position.z = Math.sin(obj.angle) * obj.radius;
+                obj.mesh.rotation.z += obj.rotSpeed;
+
+                // Alinear las flores para que miren hacia la cámara de forma estética
+                obj.mesh.lookAt(camera.position);
+
+                // Proyectar texto 3D a la pantalla 2D
+                const vector = obj.mesh.position.clone();
+                vector.project(camera);
+
+                if(vector.z > 1) {
+                    obj.label.style.opacity = 0;
+                } else {
+                    obj.label.style.opacity = 1;
+                    const x = (vector.x *  .5 + .5) * window.innerWidth;
+                    const y = (vector.y * -.5 + .5) * window.innerHeight;
+                    obj.label.style.left = `${x}px`;
+                    obj.label.style.top = `${y}px`;
+                }
+            });
+
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
